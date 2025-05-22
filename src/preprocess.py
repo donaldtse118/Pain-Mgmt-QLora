@@ -1,4 +1,7 @@
+from datasets import load_dataset
 from utils import data_loader
+from datasets import Dataset
+
 def preprocess_data():
     # Load the data
     # raw_data_columns = [Vignette,Question,Answer,Dosage,Explanation]
@@ -16,6 +19,7 @@ def preprocess_data():
     df['Answer'] = df['Answer'].str.replace('No.', 'No')
     df['answer'] = df.apply(lambda r: _format_answer(r), axis=1)
 
+    # return df[['instruction','question', 'answer']].to_dict(orient='records')
     return df[['instruction','question', 'answer']]
 
 def _format_answer(r):
@@ -29,3 +33,11 @@ def _format_answer(r):
 
 df = preprocess_data()
 df.to_csv('local/data/processed/preprocessed_data.csv', index=False)
+
+# Convert pandas DataFrame to HuggingFace Dataset
+df.rename(columns={'question': 'input',
+                   'answer': 'output'}, inplace=True)
+dataset = Dataset.from_pandas(df)
+
+# Save as JSONL for training
+dataset.to_json("local/data/processed/qpain_instruct_format.jsonl")
