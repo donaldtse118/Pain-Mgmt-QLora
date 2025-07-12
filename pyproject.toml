@@ -7,7 +7,12 @@ requires-python = ">=3.12"
 dependencies = [
     "pandas",
     "datasets",
-    "peft",
-    "torch",
+    "peft",    
     "transformers",
+    "torch==2.5.1+cu121",
+    "torchaudio==2.5.1+cu121",
+    "torchvision==0.18.1+cu121",
 ]
+
+[tool.pip]
+index-url = "https://download.pytorch.org/whl/cu121"
