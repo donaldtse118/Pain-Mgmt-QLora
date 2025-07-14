@@ -175,8 +175,10 @@ def main():
     # Load quantized model with 4-bit
     base_model = AutoModelForCausalLM.from_pretrained(
         base_model_name,
-        # use_safetensors=True,
-        device_map={"": 0},   # force model to GPU device 0
+        # use_safetensors=False,
+        # offload_folder="offload",
+        # offload_state_dict=True,
+        device_map={"": 0},   # force model to GPU device 0        
         quantization_config={
             "load_in_4bit": True,
             "bnb_4bit_compute_dtype": torch.bfloat16,
