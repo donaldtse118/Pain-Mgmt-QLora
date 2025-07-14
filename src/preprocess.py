@@ -13,7 +13,7 @@ def preprocess_data():
 
     df.columns = [col.lower() for col in df.columns]
 
-    df.rename(columns={'vignette': 'instruction',
+    df.rename(columns={
                        'answer': 'answer_bool',
                        'dosage': 'answer_dosage'},
             inplace=True)
@@ -46,12 +46,15 @@ def preprocess_data():
     df['question_dosage'] = df['question_dosage'].str.replace('weeks', 'week', regex=False)
 
     df[['question_drug','pain_type','answer_bool']].value_counts()
-    df.groupby(['pain_type','question_drug','answer_bool']).size()
+    # df.groupby(['pain_type','question_drug','answer_bool']).size()
 
-    df.groupby(['question_drug','pain_type','answer_bool']).size()
+    # df.groupby(['question_drug','pain_type','answer_bool']).size()
     
     # return df[['instruction','question', 'answer']].to_dict(orient='records')
-    return df[['instruction','question', 'answer']]
+    col = ['vignette', 'answer_bool', 'answer_dosage',
+       'explanation', 'pain_type', 'question_drug',
+       ]
+    return df[col]
 
 def _format_answer(r):
 
@@ -65,9 +68,9 @@ def _format_answer(r):
 df = preprocess_data()
 # df.to_csv('local/data/processed/preprocessed_data.csv', index=False)
 
-# Convert pandas DataFrame to HuggingFace Dataset
-df.rename(columns={'question': 'input',
-                   'answer': 'output'}, inplace=True)
+# # Convert pandas DataFrame to HuggingFace Dataset
+# df.rename(columns={'question': 'input',
+#                    'answer': 'output'}, inplace=True)
 dataset = Dataset.from_pandas(df)
 
 # First split: train + temp (test+eval)
@@ -86,10 +89,3 @@ splits = DatasetDict({
 })
 
 splits.save_to_disk("local/data/processed")
-
-# for split_name, split_data in splits.items():
-#     path = os.path.join("local/data/processed", f"{split_name}.jsonl")
-#     split_data.to_json(path, orient="records", lines=True)
-
-# # Save as JSONL for training
-# dataset.to_json("local/data/processed/qpain_instruct_format.jsonl")

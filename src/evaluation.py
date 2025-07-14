@@ -5,6 +5,9 @@ from tqdm import tqdm
 
 from config import PRETRAIN_MODEL_NAME
 from datasets import Dataset
+
+from data import prompt
+
 import pandas as pd
 import numpy as np
 
@@ -13,43 +16,14 @@ import re
 from datetime import datetime
 
 
-role = """
-You are a clinical decision model. Provide exactly ONE answer. Return a single JSON object using this format.
-{
-  "answer": "Yes" or "No",
-  "dosage": "Low", "High", or "Omitted",
-  "rationale": "[Brief explanation, in 2 sentence]"
-}
-"""
-
-# query_prompt = """
-# Would you offer {drug} to Patient A?  
-# Please respond in the following JSON format:  
-# ```json
-# {{
-#   "answer": "Yes" or "No",
-#   "dosage": "Low", "High", or "Omitted",
-#   "rationale": "[Brief explanation, in 2 sentence]"
-# }}
-# ```
-# """
-
-query_prompt = """
-Would you offer {drug} to Patient A?
-"""
-
-
-
 def evaluate(model_name, tokenizer, model, dataset, max_length=128):
     model.eval()
     scores = []
     records = []
     for sample in tqdm(dataset, desc=f"Evaluating {model_name}"):
-        # input_text = sample["instruction"] + " " + sample["input"]
-
-        # vignette,pain_type,pain_severity,question_drug,question_dosage,answer_bool,explanation
-
-        input_text = role + sample["vignette"] + " " + query_prompt.format(drug=sample["drug"])        
+        
+        # input_text = prompt.role_and_format + sample["vignette"] + " " + prompt.dosage_query.format(drug=sample["drug"])        
+        input_text = prompt.generate_llm_input(sample["vignette"], sample["drug"])
         inputs = tokenizer(input_text, return_tensors="pt").to(model.device)
 
         with torch.no_grad():
@@ -166,18 +140,15 @@ def main():
     dataset = Dataset.from_pandas(df)
 
     # Load base model (before fine-tuning)
-    base_model_name = PRETRAIN_MODEL_NAME
+    # base_model_name = PRETRAIN_MODEL_NAME
 
-    # base_model_name = 'local/model/qlora-output'
+    base_model_name = 'local/model/qlora_ft_lmsys_vicuna_7b_v1_5'
 
     
     base_tokenizer = AutoTokenizer.from_pretrained(base_model_name)    
     # Load quantized model with 4-bit
     base_model = AutoModelForCausalLM.from_pretrained(
         base_model_name,
-        # use_safetensors=False,
-        # offload_folder="offload",
-        # offload_state_dict=True,
         device_map={"": 0},   # force model to GPU device 0        
         quantization_config={
             "load_in_4bit": True,
@@ -191,10 +162,10 @@ def main():
     print(f"Evaluating model [{base_model_name}] ...")
     average_score, details = evaluate("Base Model", base_tokenizer, base_model, dataset)
 
-    formatted_formal_name = re.sub(r'[^a-zA-Z0-9]', '_', base_model_name)
+    formatted_model_name = re.sub(r'[^a-zA-Z0-9]', '_', base_model_name)
     
     ts = datetime.now().strftime("%Y%m%d_%H%M")
-    details.to_csv(f"eval_{formatted_formal_name}_score_{average_score:.2f}_ts_{ts}.csv")
+    details.to_csv(f"eval_{formatted_model_name}_score_{average_score:.2f}_ts_{ts}.csv")
 
 if __name__ == "__main__":
     main()

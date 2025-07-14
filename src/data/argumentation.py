@@ -18,24 +18,6 @@ def generate_vignette(pain_type, severity):
         f"The patient A {phrase}. Pain is categorized as {severity}."
     )
 
-# def dignose(patient_severity, dosage_target_severity):
-
-#     answer = "Unknown"
-
-#     if patient_severity == dosage_target_severity:
-#         answer = "Yes"
-#         return answer
-
-#     if patient_severity == "mild":
-#         answer = "No_Opioid" # no opioid for mild pain
-#     elif patient_severity == "moderate":
-#         if dosage_target_severity == "severe":
-#             answer = "No_Overdose" # too much dosage for moderate pain
-#     elif patient_severity == "severe":
-#         if dosage_target_severity == "moderate":
-#             answer = "No_Underdose" # not enough dosage for severe pain
-
-#     return answer
 
 def generate_augmented_data_with_vignettes(n=50, seed=42):
     random.seed(seed)
@@ -44,10 +26,7 @@ def generate_augmented_data_with_vignettes(n=50, seed=42):
     for _ in range(n):        
         pain_type = random.choice(pain_types)
         
-        drug = pain_types_drug_map[pain_type]
-        
-        # question_dosage = random.choice(dosages[question_drug])
-        # dosage_target_severity = pain_severity_map.get(question_dosage, "none")
+        drug = pain_types_drug_map[pain_type]        
 
         patient_severity = random.choice(severities)
         dosage = dosages[drug].get(patient_severity, "Omitted")

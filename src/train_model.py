@@ -3,6 +3,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingA
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from datasets import load_from_disk
 import torch
+import re
+from data import prompt
 
 from config import PRETRAIN_MODEL_NAME
 
@@ -15,7 +17,6 @@ tokenizer.pad_token = tokenizer.eos_token
 # Load quantized model with 4-bit
 model = AutoModelForCausalLM.from_pretrained(
     PRETRAIN_MODEL_NAME,    
-    # device_map="auto",
     device_map={"": 0},   # force model to GPU device 0
     quantization_config={
         "load_in_4bit": True,
@@ -43,30 +44,36 @@ lora_config = LoraConfig(
 # Apply LoRA
 model = get_peft_model(model, lora_config)
 
-
-def tokenize(example):
+def tokenize(sample):
     # Concatenate instruction and input as the prompt, output as the label
-    prompt = example["instruction"]
-    input_text = example.get("input")
-    if input_text:
-        prompt += "\n" + input_text
+    # prompt = example["instruction"]
+    # input_text = example.get("input")
+    # if input_text:
+    #     prompt += "\n" + input_text
+
+    input_text = prompt.generate_llm_input(sample["vignette"], sample["question_drug"])
 
     # Tokenize prompt (input) and output (label) separately
     input_ids = tokenizer(
-        prompt,
+        input_text,
         padding="max_length",
         truncation=True,
         max_length=512,
     )["input_ids"]
+      
+    label = prompt.generate_llm_output(sample['answer_bool'],
+                                       sample['answer_dosage'],
+                                       sample['explanation'])
 
     labels = tokenizer(
-        example["output"],
+        label,
         padding="max_length",
         truncation=True,
         max_length=512,
     )["input_ids"]
 
     return {"input_ids": input_ids, "labels": labels}
+
 tokenized_train_dataset = dataset['train'].map(tokenize, batched=False)
 
 # Training config
@@ -75,6 +82,7 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,
     warmup_steps=10,
     max_steps=50,
+    # max_steps=20,
     learning_rate=2e-4,
     fp16=True,
     logging_dir="./logs",
@@ -94,6 +102,14 @@ trainer = Trainer(
 
 trainer.train()
 
+formatted_model_name = re.sub(r'[^a-zA-Z0-9]', '_', PRETRAIN_MODEL_NAME)
+
 # Save the LoRA-adapted model and tokenizer
-model.save_pretrained("local/model/qlora-output")
-tokenizer.save_pretrained("local/model/qlora-output")
+output_model_path = f"local/model/qlora_ft_{formatted_model_name}"
+model.save_pretrained(output_model_path)
+tokenizer.save_pretrained(output_model_path)
+
+
+# max_steps=20,
+# {'train_runtime': 374.1127, 'train_samples_per_second': 0.855, 'train_steps_per_second': 0.053, 'train_loss': 6.15913200378418, 'epoch': 5.0} 
+# {'train_runtime': 803.9691, 'train_samples_per_second': 0.995, 'train_steps_per_second': 0.062, 'train_loss': 3.45401123046875, 'epoch': 12.62}
