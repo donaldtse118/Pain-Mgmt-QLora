@@ -24,4 +24,4 @@ def generate_llm_output(answer_bool, dosage, rationale):
       "rationale": rationale,
     }
 
-    return json.dumps(result)
+    return repr(json.dumps(result)) # repr function adding /n in string

@@ -6,6 +6,7 @@ drugs = [
     "oxycodone"
 ]
 
+
 pain_types = [
     "acute_cancer", 
     "acute_non_cancer",
@@ -85,3 +86,42 @@ severity_phrases = {
         "no relief from any oral analgesics"
     ]
 }
+
+pain_templates = [
+    "Patient A with history of {pain_type}",
+    "Patient A who presents to your clinic with {pain_type}",
+    "Patient A who is {pain_type}",
+    "Patient A reports {pain_type}",
+    "Patient A is experiencing {pain_type}",
+    "Patient A complains of {pain_type}",
+    "Patient A suffers from {pain_type}",        
+    "Patient A came to the emergency department due to {pain_type}",
+    "Patient A presents today with a complaint of {pain_type}",
+    "Patient A returns for follow-up on {pain_type}",
+]
+
+severity_templates = [    
+    "Patient A {phrase}",
+    "The patient {phrase} recently",
+    "There is {phrase} in Patient A",
+    "Currently, the patient {phrase}",
+    "Right now, the patient {phrase}",
+    "There is evidence that the patient {phrase}",
+    "The document indicate that the patient {phrase}",
+    "It is noted that the patient {phrase}",
+    "Clinically, patient A {phrase}",
+    "A report indicates that Patient A {phrase}"
+]
+
+diagnosis_templates = [
+    "Pain is categorized as {severity}",
+    "The pain level is assessed as {severity}",
+    "Patient is experiencing {severity} pain",
+    "Clinical assessment indicates {severity} pain",
+    "Pain severity is documented as {severity}",
+    "The patient describes the pain as {severity}",
+    "Severity of pain is rated {severity}",
+    "Pain has been classified as {severity}",
+    "Reported pain intensity is {severity}",
+    "Evaluation shows signs of {severity} pain",
+]

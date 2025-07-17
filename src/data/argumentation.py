@@ -1,7 +1,8 @@
 import random
 import pandas as pd
 
-from terms import drugs, pain_types, answers, dosages, explanation_templates, pain_severity_map, severity_phrases, pain_types_drug_map, severities
+from terms import (pain_types, dosages, explanation_templates, severity_phrases, 
+                   severity_templates, pain_templates, diagnosis_templates, pain_types_drug_map, severities)
 
 
 
@@ -9,13 +10,19 @@ from terms import drugs, pain_types, answers, dosages, explanation_templates, pa
 def generate_vignette(pain_type, severity):
     
     if severity == "none":
-        phrase = random.choice(severity_phrases["mild"])
+        severity_phrase = random.choice(severity_phrases["mild"])
     else:
-        phrase = random.choice(severity_phrases[severity])
+        severity_phrase = random.choice(severity_phrases[severity])
+
+    pain_template = random.choice(pain_templates)
+    severity_template = random.choice(severity_templates)
+    diagnosis_template = random.choice(diagnosis_templates)
+
+    pain_type_str = pain_type.replace('_', ' ')
     
-    return (
-        f"Patient A with {pain_type.replace('_', ' ')}. "
-        f"The patient A {phrase}. Pain is categorized as {severity}."
+    return (        
+        f"{pain_template.format(pain_type=pain_type_str)}. "
+        f"{severity_template.format(phrase=severity_phrase)}. {diagnosis_template.format(severity=severity)}."
     )
 
 
@@ -57,6 +64,11 @@ def generate_augmented_data_with_vignettes(n=50, seed=42):
 
 
 # Create a small batch for review
-augmented_df = generate_augmented_data_with_vignettes(n=100)
+augmented_df = generate_augmented_data_with_vignettes(n=30000)
+
+augmented_df.drop_duplicates(inplace=True)
+print(augmented_df.shape)
+
+
 augmented_df.to_csv("aug.csv", index=False)
 augmented_df.head(10)

@@ -16,7 +16,10 @@ import re
 from datetime import datetime
 
 
-def evaluate(model_name, tokenizer, model, dataset, max_length=128):
+def evaluate(model_name, tokenizer, model, dataset, 
+            #  max_length=128
+            max_length=512
+             ):
     model.eval()
     scores = []
     records = []
@@ -55,6 +58,9 @@ def evaluate(model_name, tokenizer, model, dataset, max_length=128):
         }
 
         records.append(record)
+
+        accuracy = np.average(scores)
+        print(f"real time accuracy: {accuracy:.2%}")
         
     accuracy = np.average(scores)
     print(f"{model_name} Accuracy: {accuracy:.2%}")
@@ -141,7 +147,6 @@ def main():
 
     # Load base model (before fine-tuning)
     # base_model_name = PRETRAIN_MODEL_NAME
-
     base_model_name = 'local/model/qlora_ft_lmsys_vicuna_7b_v1_5'
 
     
