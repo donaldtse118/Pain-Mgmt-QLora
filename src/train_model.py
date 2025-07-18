@@ -8,7 +8,8 @@ from data import prompt
 
 from config import PRETRAIN_MODEL_NAME
 
-dataset = load_from_disk("local/data/processed")
+# dataset = load_from_disk("local/data/processed")
+dataset = load_from_disk("local/data/augmented")
 
 # Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained(PRETRAIN_MODEL_NAME)
@@ -46,49 +47,12 @@ lora_config = LoraConfig(
 # Apply LoRA
 model = get_peft_model(model, lora_config)
 
-# def tokenize(sample):
-
-#     input_text = prompt.generate_llm_input(sample["vignette"], sample["question_drug"])
-
-#     inputs = tokenizer(
-#         input_text,
-#         padding="max_length",
-#         truncation=True,
-#         max_length=512,
-#         return_tensors="pt"
-#     )
-      
-#     label_text = prompt.generate_llm_output(sample['answer_bool'],
-#                                        sample['answer_dosage'],
-#                                        sample['explanation'])
-
-#     with tokenizer.as_target_tokenizer():
-#         labels = tokenizer(
-#             label_text,
-#             padding="max_length",
-#             truncation=True,
-#             max_length=512,
-#             return_tensors="pt"
-#         )
-
-#     # return {"input_ids": input_ids, "labels": labels}
-    
-#     input_ids = inputs.input_ids[0]
-#     label_ids = labels.input_ids[0]
-#     label_ids[label_ids == tokenizer.pad_token_id] = -100  # Replaces all padding tokens in label_ids with -100.-100 is a special value used by PyTorch to ignore that token when computing loss.
-
-#     return {
-#         "input_ids": input_ids,
-#         "attention_mask": inputs.attention_mask[0],
-#         "labels": label_ids,
-#     }
-
 def tokenize(sample):
     # 1. Generate the full prompt and the expected output
-    input_text = prompt.generate_llm_input(sample["vignette"], sample["question_drug"])
+    input_text = prompt.generate_llm_input(sample["vignette"], sample["drug"])
     label_text = prompt.generate_llm_output(
         sample['answer_bool'],
-        sample['answer_dosage'],
+        sample['dosage'],
         sample['explanation']
     )
 
@@ -151,8 +115,8 @@ training_args = TrainingArguments(
     per_device_train_batch_size=4,
     gradient_accumulation_steps=4,
     warmup_steps=10,
-    max_steps=100,
-    # max_steps=20,
+    # max_steps=100,
+    max_steps=20,
     learning_rate=2e-4,
     fp16=True,
     logging_dir="./logs",
@@ -184,31 +148,6 @@ print(output.training_loss)
 print(output.metrics)
 
 
-
-# max_steps=20,
-# {'train_runtime': 374.1127, 'train_samples_per_second': 0.855, 'train_steps_per_second': 0.053, 'train_loss': 6.15913200378418, 'epoch': 5.0} 
-# {'train_runtime': 319.6118, 'train_samples_per_second': 1.001, 'train_steps_per_second': 0.063, 'train_loss': 6.08679428100586, 'epoch': 5.0}
-# max_steps=30
-# {'train_runtime': 564.4196, 'train_samples_per_second': 0.85, 'train_steps_per_second': 0.053, 'train_loss': 4.874612426757812, 'epoch': 7.62}
-# max_steps=50
-# {'train_runtime': 803.9691, 'train_samples_per_second': 0.995, 'train_steps_per_second': 0.062, 'train_loss': 3.45401123046875, 'epoch': 12.62}
-# {'train_runtime': 811.0319, 'train_samples_per_second': 0.986, 'train_steps_per_second': 0.062, 'train_loss': 3.4659902954101565, 'epoch': 12.62}
-
-# AFTER replace padding with magic value -100
-# max_steps=30
-# {'train_runtime': 343.2545, 'train_samples_per_second': 0.932, 'train_steps_per_second': 0.058, 'train_loss': 14.077944946289062, 'epoch': 5.0}
-# no max_steps
-# {'train_runtime': 195.8288, 'train_samples_per_second': 0.751, 'train_steps_per_second': 0.061, 'total_flos': 2984717699776512.0, 'train_loss': 15.364848136901855, 'epoch': 3.0}
-
-# change rank from 4->8
-# {'train_runtime': 194.5023, 'train_samples_per_second': 0.756, 'train_steps_per_second': 0.062, 'total_flos': 2985664740065280.0, 'train_loss': 15.351463317871094, 'epoch': 3.0}
-
-# change lora_alpha from 16->32
-# {'train_runtime': 493.2269, 'train_samples_per_second': 0.973, 'train_steps_per_second': 0.061, 'total_flos': 7616491683840000.0, 'train_loss': 11.165579223632813, 'epoch': 7.615384615384615}
-
-# r=4, lora_alpha=16, max_step=50
-# {'train_runtime': 814.5736, 'train_samples_per_second': 0.982, 'train_steps_per_second': 0.061, 'total_flos': 1.258860526436352e+16, 'train_loss': 9.612734909057616, 'epoch': 12.615384615384615}
-
 # tokenise input and output together and mask output input
 # {'train_runtime': 323.4536, 'train_samples_per_second': 0.989, 'train_steps_per_second': 0.062, 'total_flos': 4974529499627520.0, 'train_loss': 1.5642086505889892, 'epoch': 5.0}
 # max_steps=50
@@ -220,3 +159,11 @@ print(output.metrics)
 # {'train_runtime': 817.4, 'train_samples_per_second': 0.979, 'train_steps_per_second': 0.061, 'total_flos': 1.25925995839488e+16, 'train_loss': 0.9513972663879394, 'epoch': 12.615384615384615}
 # max_steps=100
 # {'train_runtime': 1611.496, 'train_samples_per_second': 0.993, 'train_steps_per_second': 0.062, 'total_flos': 2.4880539500544e+16, 'train_loss': 0.47257256641983986, 'epoch': 25.0}
+
+
+##### Augmented dataset ###
+# {'train_runtime': 419.3328, 'train_samples_per_second': 0.763, 'train_steps_per_second': 0.048, 'total_flos': 6499406236876800.0, 'train_loss': 0.7589183330535889, 'epoch': 0.015063076633402372}
+# 900 rcd for training, no max_steps, default 171 
+# all correct for valid json (but all yes case)
+# {'train_runtime': 29616.9554, 'train_samples_per_second': 0.091, 'train_steps_per_second': 0.006, 'total_flos': 5.4838740123648e+16, 'train_loss': 0.0840140072631749, 'epoch': 3.0}
+# {'train_runtime': 418.9467, 'train_samples_per_second': 0.764, 'train_steps_per_second': 0.048, 'total_flos': 6499406236876800.0, 'train_loss': 0.7415579557418823, 'epoch': 0.35555}

@@ -70,5 +70,29 @@ augmented_df.drop_duplicates(inplace=True)
 print(augmented_df.shape)
 
 
-augmented_df.to_csv("aug.csv", index=False)
-augmented_df.head(10)
+# augmented_df.to_csv("aug.csv", index=False)
+# augmented_df.head(10)
+
+augmented_df = augmented_df.head(1000)
+
+# Prepare dataset
+from datasets import Dataset
+dataset = Dataset.from_pandas(augmented_df)
+
+# First split: train + temp (test+eval)
+train_test = dataset.train_test_split(test_size=0.1, seed=42)  # 70% train, 30% temp
+
+# Second split: test + eval from temp
+test_eval = train_test['test'].train_test_split(test_size=0.2, seed=42)  # 15% test, 15% eval
+
+# Combine all splits into a DatasetDict
+from datasets import DatasetDict
+
+splits = DatasetDict({
+    'train': train_test['train'],
+    'validation': test_eval['train'],
+    'test': test_eval['test'],
+})
+
+splits.save_to_disk("local/data/augmented")
+

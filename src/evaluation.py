@@ -1,3 +1,5 @@
+import ast
+
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset, load_from_disk
@@ -5,6 +7,7 @@ from tqdm import tqdm
 
 from config import PRETRAIN_MODEL_NAME
 from datasets import Dataset
+
 
 from data import prompt
 
@@ -102,10 +105,10 @@ def parse_llm_output(llm_output) -> dict:
     json_str = json_str.split("}")[0] + "}"
 
     # Step 4: Try parsing
-    try:
-        return json.loads(json_str)
-    except json.JSONDecodeError as e:
-        print(f"Still invalid JSON: {json_str}")        
+    try:        
+        return ast.literal_eval(json_str)        
+    except Exception as e:
+        return json.loads(json_str)        
 
     return result
 
@@ -141,13 +144,14 @@ def main():
     # dataset = load_dataset("local/data/evaluate/chatgpt_generated.jsonl")
     # dataset = load_from_disk("local/data/processed")["validation"]
 
-    df = pd.read_csv("local/data/evaluation.csv")[:20]
-        
-    dataset = Dataset.from_pandas(df)
+    # df = pd.read_csv("local/data/evaluation.csv")[:20]        
+    # dataset = Dataset.from_pandas(df)
+
+    dataset = load_from_disk("local/data/augmented")["test"]
 
     # Load base model (before fine-tuning)
-    # base_model_name = PRETRAIN_MODEL_NAME
-    base_model_name = 'local/model/qlora_ft_lmsys_vicuna_7b_v1_5'
+    base_model_name = PRETRAIN_MODEL_NAME
+    # base_model_name = 'local/model/qlora_ft_lmsys_vicuna_7b_v1_5'
 
     
     base_tokenizer = AutoTokenizer.from_pretrained(base_model_name)    
