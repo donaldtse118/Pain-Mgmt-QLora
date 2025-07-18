@@ -20,9 +20,14 @@ def generate_vignette(pain_type, severity):
 
     pain_type_str = pain_type.replace('_', ' ')
     
+    # return (        
+    #     f"{pain_template.format(pain_type=pain_type_str)}. "
+    #     f"{severity_template.format(phrase=severity_phrase)}. {diagnosis_template.format(severity=severity)}."
+    # )
+
     return (        
         f"{pain_template.format(pain_type=pain_type_str)}. "
-        f"{severity_template.format(phrase=severity_phrase)}. {diagnosis_template.format(severity=severity)}."
+        f"{severity_template.format(phrase=severity_phrase)}."
     )
 
 
@@ -94,5 +99,5 @@ splits = DatasetDict({
     'test': test_eval['test'],
 })
 
-splits.save_to_disk("local/data/augmented")
+splits.save_to_disk("local/data/augmented_no_diagnosis")
 

@@ -9,7 +9,8 @@ from data import prompt
 from config import PRETRAIN_MODEL_NAME
 
 # dataset = load_from_disk("local/data/processed")
-dataset = load_from_disk("local/data/augmented")
+# dataset = load_from_disk("local/data/augmented")
+dataset = load_from_disk("local/data/augmented_no_diagnosis")
 
 # Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained(PRETRAIN_MODEL_NAME)
@@ -34,10 +35,10 @@ model = prepare_model_for_kbit_training(model)
 # %%
 # Configure LoRA
 lora_config = LoraConfig(
-    # r=4,                # Lower rank to reduce #params and overfitting
-    # lora_alpha=16,      # Lower alpha to soften updates
-    r=8,                # Lower rank to reduce #params and overfitting    
-    lora_alpha=32,      # Lower alpha to soften updates
+    r=4,                # Lower rank to reduce #params and overfitting
+    lora_alpha=16,      # Lower alpha to soften updates
+    # r=8,                # Lower rank to reduce #params and overfitting    
+    # lora_alpha=32,      # Lower alpha to soften updates
     target_modules=["q_proj", "v_proj"],  
     lora_dropout=0.1,   # Slightly higher dropout to prevent overfit
     bias="none",
@@ -161,9 +162,21 @@ print(output.metrics)
 # {'train_runtime': 1611.496, 'train_samples_per_second': 0.993, 'train_steps_per_second': 0.062, 'total_flos': 2.4880539500544e+16, 'train_loss': 0.47257256641983986, 'epoch': 25.0}
 
 
-##### Augmented dataset ###
+##### Train with Augmented dataset ###
 # {'train_runtime': 419.3328, 'train_samples_per_second': 0.763, 'train_steps_per_second': 0.048, 'total_flos': 6499406236876800.0, 'train_loss': 0.7589183330535889, 'epoch': 0.015063076633402372}
 # 900 rcd for training, no max_steps, default 171 
 # all correct for valid json (but all yes case)
 # {'train_runtime': 29616.9554, 'train_samples_per_second': 0.091, 'train_steps_per_second': 0.006, 'total_flos': 5.4838740123648e+16, 'train_loss': 0.0840140072631749, 'epoch': 3.0}
 # {'train_runtime': 418.9467, 'train_samples_per_second': 0.764, 'train_steps_per_second': 0.048, 'total_flos': 6499406236876800.0, 'train_loss': 0.7415579557418823, 'epoch': 0.35555}
+
+
+# without diagnosis (augmented data: 75%, medical data: 23%)
+# {'train_runtime': 419.2248, 'train_samples_per_second': 0.763, 'train_steps_per_second': 0.048, 'total_flos': 6499406236876800.0, 'train_loss': 0.6309847116470337, 'epoch': 0.35555555555555557}
+
+# without diagnosis + r=4, alpha=16, max_steps = 20
+# {'train_runtime': 422.6856, 'train_samples_per_second': 0.757, 'train_steps_per_second': 0.047, 'total_flos': 6497344652574720.0, 'train_loss': 0.7833358764648437, 'epoch': 0.35555555555555557}
+# model_type  test_dataset  score
+# baseline    augmented     0.600
+# baseline    medicial      0.775
+# finetune    augmented     0.700
+# finetune     medicial     0.225

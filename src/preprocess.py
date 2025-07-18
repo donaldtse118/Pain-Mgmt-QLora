@@ -15,7 +15,8 @@ def preprocess_data():
 
     df.rename(columns={
                        'answer': 'answer_bool',
-                       'dosage': 'answer_dosage'},
+                       'dosage': 'answer_dosage'
+                       },
             inplace=True)
     df['answer_bool'] = df['answer_bool'].str.lower().str.replace('.', '')
     
@@ -45,16 +46,19 @@ def preprocess_data():
     df['question_dosage'] = df['question_dosage'].str.replace(r'(,)? or ',',', regex=True)
     df['question_dosage'] = df['question_dosage'].str.replace('weeks', 'week', regex=False)
 
-    df[['question_drug','pain_type','answer_bool']].value_counts()
-    # df.groupby(['pain_type','question_drug','answer_bool']).size()
-
-    # df.groupby(['question_drug','pain_type','answer_bool']).size()
-    
-    # return df[['instruction','question', 'answer']].to_dict(orient='records')
     col = ['vignette', 'answer_bool', 'answer_dosage',
        'explanation', 'pain_type', 'question_drug',
        ]
-    return df[col]
+    df_output = df[col]
+    df_output.rename(columns={
+        'answer_dosage': 'dosage',
+        'question_drug': 'drug',        
+    }, inplace=True)
+
+    df_output['dosage'].fillna("Omitted", inplace=True)
+
+    return df_output
+
 
 def _format_answer(r):
 

@@ -19,9 +19,12 @@ import re
 from datetime import datetime
 
 
-def evaluate(model_name, tokenizer, model, dataset, 
-            #  max_length=128
-            max_length=512
+def evaluate(model_name, 
+             tokenizer, 
+             model, 
+             dataset, 
+            #  max_length=128,
+            max_length=512,
              ):
     model.eval()
     scores = []
@@ -44,13 +47,16 @@ def evaluate(model_name, tokenizer, model, dataset,
         if prediction.startswith(input_text):
             prediction = prediction[len(input_text):].strip()
         
-        print(f"###############################################################################")
-        print(f"Input: {input_text}")        
-        print(f"Prediction: {prediction}")
+        # print(f"###############################################################################")
+        # print(f"Input: {input_text}")        
+        # print(f"Prediction: {prediction}")
 
         parsed_prediction = parse_llm_output(prediction)
         score = get_score(sample, parsed_prediction)
         scores.append(score)
+
+        if score == 0:
+            print(f"Prediction: {prediction}")
 
         record = { 
             **sample,
@@ -108,9 +114,12 @@ def parse_llm_output(llm_output) -> dict:
     try:        
         return ast.literal_eval(json_str)        
     except Exception as e:
-        return json.loads(json_str)        
+        try:
+            return json.loads(json_str)        
+        except Exception as e:
+            print(e)
 
-    return result
+    return result    
 
 def get_score(reference, prediction):
     
@@ -123,7 +132,8 @@ def get_score(reference, prediction):
         print("answer not in key!!")
 
     if "dosage" in prediction.keys():        
-        if prediction["dosage"].lower() in reference["dosage"].lower():
+        pred_dosage = prediction["dosage"].split(" ")[0].lower() # normalise "Low" vs "Low (10mg)" vs "Low (1week)"
+        if pred_dosage in reference["dosage"].lower():
             score += 50
     else:
         print("answer not in key!!")
@@ -140,41 +150,64 @@ def get_score(reference, prediction):
 
 
 def main():
-    # Load test data (replace with your medical dataset)
-    # dataset = load_dataset("local/data/evaluate/chatgpt_generated.jsonl")
-    # dataset = load_from_disk("local/data/processed")["validation"]
 
-    # df = pd.read_csv("local/data/evaluation.csv")[:20]        
-    # dataset = Dataset.from_pandas(df)
-
-    dataset = load_from_disk("local/data/augmented")["test"]
-
-    # Load base model (before fine-tuning)
-    base_model_name = PRETRAIN_MODEL_NAME
-    # base_model_name = 'local/model/qlora_ft_lmsys_vicuna_7b_v1_5'
-
+    # dataset = load_from_disk("local/data/augmented")["test"]
+    # dataset = load_from_disk("local/data/processed")["train"].select(range(20))
     
-    base_tokenizer = AutoTokenizer.from_pretrained(base_model_name)    
-    # Load quantized model with 4-bit
-    base_model = AutoModelForCausalLM.from_pretrained(
-        base_model_name,
-        device_map={"": 0},   # force model to GPU device 0        
-        quantization_config={
-            "load_in_4bit": True,
-            "bnb_4bit_compute_dtype": torch.bfloat16,
-            "bnb_4bit_use_double_quant": True,
-            "bnb_4bit_quant_type": "nf4",
-        },
-    )
+    test_datasets = {
+        "augmented" : load_from_disk("local/data/augmented")["test"],
+        "medicial": load_from_disk("local/data/processed")["train"].select(range(20)),
+    }
 
+    models = {
+        "baseline": PRETRAIN_MODEL_NAME,
+        "finetune" : 'local/model/qlora_ft_lmsys_vicuna_7b_v1_5',
+    }
 
-    print(f"Evaluating model [{base_model_name}] ...")
-    average_score, details = evaluate("Base Model", base_tokenizer, base_model, dataset)
-
-    formatted_model_name = re.sub(r'[^a-zA-Z0-9]', '_', base_model_name)
+    result = []
     
-    ts = datetime.now().strftime("%Y%m%d_%H%M")
-    details.to_csv(f"eval_{formatted_model_name}_score_{average_score:.2f}_ts_{ts}.csv")
+    for model_type, model_name_path in models.items():
+
+        print(f"loaded {model_type} model: [{model_name_path}]")
+
+        tokenizer = AutoTokenizer.from_pretrained(model_name_path)    
+        # Load quantized model with 4-bit
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name_path,
+            device_map={"": 0},   # force model to GPU device 0        
+            quantization_config={
+                "load_in_4bit": True,
+                "bnb_4bit_compute_dtype": torch.bfloat16,
+                "bnb_4bit_use_double_quant": True,
+                "bnb_4bit_quant_type": "nf4",
+            },
+        )
+        
+        for dataset_name, dataset in test_datasets.items():
+
+            print(f"loaded {dataset_name} data ({len(dataset)}) records")
+            print(f"Evaluating model [{model_name_path}] ...")
+            average_score, details = evaluate("Base Model", tokenizer, model, dataset)
+
+            formatted_model_name = re.sub(r'[^a-zA-Z0-9]', '_', model_name_path.split("/")[-1])
+            
+            ts = datetime.now().strftime("%Y%m%d_%H%M")
+            details.to_csv(f"eval_{dataset_name}_by_{formatted_model_name}_score_{average_score:.2f}_ts_{ts}.csv")
+
+            result.append({"model_type":model_type,
+                           "test_dataset":dataset_name,
+                           "score":average_score
+                           })
+            
+        
+        # Delete the model explicitly
+        del model        
+        del tokenizer
+        
+        # Empty PyTorch CUDA cache
+        torch.cuda.empty_cache()
+                    
+    print(pd.DataFrame(result))    
 
 if __name__ == "__main__":
     main()
