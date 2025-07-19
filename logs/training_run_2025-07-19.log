@@ -1,0 +1,67 @@
+13:53:20 - __main__ - INFO - ## Prepared medical data:
+13:53:20 - __main__ - INFO - train: 35 samples
+13:53:20 - __main__ - INFO - test: 20 samples
+13:53:21 - __main__ - INFO - ## Prepared augmented data:
+13:53:21 - __main__ - INFO - train: 900 samples
+13:53:21 - __main__ - INFO - validation: 80 samples
+13:53:21 - __main__ - INFO - test: 20 samples
+13:53:21 - __main__ - INFO - ## Prepaing hybrid train data:
+13:53:21 - data.hybrid_train_data - INFO - hybrid data distribtuion, ttl : 150
+13:53:21 - data.hybrid_train_data - INFO - dosage   data_source
+high     augmented      50
+low      augmented      19
+         orig           31
+omitted  augmented      46
+13:53:21 - __main__ - INFO - train: 150 samples
+13:53:21 - __main__ - INFO - # Start to fine tune model
+Loading checkpoint shards: 100%|███████████████████████████████████████████████████████| 2/2 [00:16<00:00,  8.21s/it]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.  
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.  
+Map: 100%|████████████████████████████████████████████████████████████████| 150/150 [00:00<00:00, 1003.11 examples/s]
+c:\repo\Pain-Mgmt-QLora\src\model\fine_tune_model.py:147: FutureWarning: `tokenizer` is deprecated and will be removed in version 5.0.0 for `Trainer.__init__`. Use `processing_class` instead.
+  trainer = Trainer(
+No label_names provided for model class `PeftModelForCausalLM`. Since `PeftModel` hides base models input arguments, if label_names is not given, label_names can't be set automatically within `Trainer`. Note that empty label_names list will be used instead.
+  0%|                                                                                         | 0/60 [00:00<?, ?it/s]`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+c:\repo\Pain-Mgmt-QLora\.venv\Lib\site-packages\torch\_dynamo\eval_frame.py:838: UserWarning: torch.utils.checkpoint: the use_reentrant parameter should be passed explicitly. In version 2.5 we will raise an exception if use_reentrant is not passed. use_reentrant=False is recommended, but if you need to preserve the current default behavior, you can pass use_reentrant=True. Refer to docs for more details on the differences between the two variants.
+  return fn(*args, **kwargs)
+{'loss': 1.1761, 'grad_norm': 0.9461577534675598, 'learning_rate': 0.00018, 'epoch': 1.0}
+{'loss': 0.7215, 'grad_norm': 1.1070215702056885, 'learning_rate': 0.000164, 'epoch': 2.0}
+{'loss': 0.4684, 'grad_norm': 1.765498161315918, 'learning_rate': 0.000124, 'epoch': 3.0}
+{'loss': 0.3118, 'grad_norm': 0.43187543749809265, 'learning_rate': 8.4e-05, 'epoch': 4.0}
+{'loss': 0.2613, 'grad_norm': 0.4251209497451782, 'learning_rate': 4.4000000000000006e-05, 'epoch': 5.0}
+{'loss': 0.2425, 'grad_norm': 1.0076158046722412, 'learning_rate': 4.000000000000001e-06, 'epoch': 6.0}                                         
+{'train_runtime': 1180.0037, 'train_samples_per_second': 0.814, 'train_steps_per_second': 0.051, 'train_loss': 0.5302662094434102, 'epoch': 6.0}
+14:13:20 - model.fine_tune_model - INFO - Training completed. training loss = 0.5302662094434102
+14:13:20 - model.fine_tune_model - INFO - {'train_runtime': 1180.0037, 'train_samples_per_second': 0.814, 'train_steps_per_second': 0.051, 'total_flos': 1.82737818353664e+16, 'train_loss': 0.5302662094434102, 'epoch': 6.0}
+14:13:20 - __main__ - INFO - Finished to fine tune model
+14:13:20 - __main__ - INFO - Start evaluation...
+loaded baseline model: [lmsys/vicuna-7b-v1.5]
+Loading checkpoint shards: 100%|█████████████████████████████████████████████████████████████████████████████████| 2/2 [00:17<00:00,  8.57s/it]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+loaded augmented data (20) records
+Evaluating baseline model [lmsys/vicuna-7b-v1.5] ...
+Evaluating model...:   0%|                                                                                              | 0/20 [00:00<?, ?it/s]The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.   
+Accuracy: 50.00%
+loaded medicial data (20) records
+real time accuracy: 77.50%
+Evaluating model...: 100%|█████████████████████████████████████████████████████████████████████████████████████| 20/20 [06:35<00:00, 19.79s/it] 
+Accuracy: 77.50%
+loaded finetune model: [local/model/qlora_ft_lmsys_vicuna_7b_v1_5]
+Loading checkpoint shards: 100%|█████████████████████████████████████████████████████████████████████████████████| 2/2 [00:21<00:00, 10.61s/it]
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+loaded augmented data (20) records
+Evaluating finetune model [local/model/qlora_ft_lmsys_vicuna_7b_v1_5] ...
+Accuracy: 97.50%
+loaded medicial data (20) records
+Evaluating finetune model [local/model/qlora_ft_lmsys_vicuna_7b_v1_5] ...
+real time accuracy: 95.00%
+Evaluating model...: 100%|█████████████████████████████████████████████████████████████████████████████████████| 20/20 [13:45<00:00, 41.26s/it] 
+Accuracy: 95.00%
+  model_type test_dataset  score
+0   baseline    augmented  0.500
+1   baseline     medicial  0.775
+2   finetune    augmented  0.975
+3   finetune     medicial  0.950
+14:50:44 - __main__ - INFO - Finished Evaluation
