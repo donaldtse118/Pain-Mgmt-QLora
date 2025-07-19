@@ -1,7 +1,9 @@
 import os
 import pandas as pd
 
-RAW_DATA_PATH = "local/data/raw/physionet.org/files/q-pain/1.0.0"
+current_script_dir = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(current_script_dir, '..', '..'))
+RAW_DATA_PATH = os.path.join(PROJECT_ROOT,"local", "data","raw","physionet.org","files","q-pain","1.0.0")
 
 def load_raw_data():
     csv_files = [f for f in os.listdir(RAW_DATA_PATH) if f.endswith('.csv')]

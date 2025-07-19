@@ -10,7 +10,9 @@ from config import PRETRAIN_MODEL_NAME
 
 # dataset = load_from_disk("local/data/processed")
 # dataset = load_from_disk("local/data/augmented")
-dataset = load_from_disk("local/data/augmented_no_diagnosis")
+# dataset = load_from_disk("local/data/augmented_no_diagnosis")
+# dataset = load_from_disk("local/data/hybrid")
+dataset = load_from_disk("local/data/hybrid_extend_pain_type_desc")
 
 # Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained(PRETRAIN_MODEL_NAME)
@@ -117,7 +119,7 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,
     warmup_steps=10,
     # max_steps=100,
-    max_steps=20,
+    max_steps=60,
     learning_rate=2e-4,
     fp16=True,
     logging_dir="./logs",
@@ -180,3 +182,30 @@ print(output.metrics)
 # baseline    medicial      0.775
 # finetune    augmented     0.700
 # finetune     medicial     0.225
+
+# train with hybrid dataset
+# {'train_runtime': 396.5019, 'train_samples_per_second': 0.807, 'train_steps_per_second': 0.05, 'total_flos': 6131869015867392.0, 'train_loss': 1.0309191703796388, 'epoch': 3.3478260869565215}
+
+# train with hybrid dataset(150 rcd), extended pain type and severity description, max_step=20
+#   model_type test_dataset  score
+# 0   baseline    augmented  0.500
+# 1   baseline     medicial  0.775
+# 2   finetune    augmented  0.620
+# 3   finetune     medicial  0.600
+# {'train_runtime': 393.3631, 'train_samples_per_second': 0.813, 'train_steps_per_second': 0.051, 'total_flos': 6091260611788800.0, 'train_loss': 0.96949462890625, 'epoch': 2.0}
+
+# train with hybrid dataset(150 rcd), extended pain type and severity description, max_step=40
+#   model_type test_dataset  score
+# 0   baseline    augmented  0.500
+# 1   baseline     medicial  0.775
+# 2   finetune    augmented  0.925
+# 3   finetune     medicial  0.700
+# {'train_runtime': 787.7507, 'train_samples_per_second': 0.812, 'train_steps_per_second': 0.051, 'total_flos': 1.21825212235776e+16, 'train_loss': 0.6849146366119385, 'epoch': 4.0}
+
+# train with hybrid dataset(150 rcd), extended pain type and severity description, max_step=60
+#   model_type test_dataset  score
+# 0   baseline    augmented  0.500
+# 1   baseline     medicial  0.775
+# 2   finetune    augmented  0.925
+# 3   finetune     medicial  0.950
+# {'train_runtime': 1178.4118, 'train_samples_per_second': 0.815, 'train_steps_per_second': 0.051, 'total_flos': 1.82737818353664e+16, 'train_loss': 0.5354639172554017, 'epoch': 6.0}

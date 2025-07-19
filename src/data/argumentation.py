@@ -2,7 +2,12 @@ import random
 import pandas as pd
 
 from terms import (pain_types, dosages, explanation_templates, severity_phrases, 
-                   severity_templates, pain_templates, diagnosis_templates, pain_types_drug_map, severities)
+                   severity_templates, pain_templates, 
+                #    diagnosis_templates, 
+                    pain_types_drug_map, 
+                    pain_type_desc,
+                    severity_phrases,
+                    severities)
 
 
 
@@ -16,10 +21,11 @@ def generate_vignette(pain_type, severity):
 
     pain_template = random.choice(pain_templates)
     severity_template = random.choice(severity_templates)
-    diagnosis_template = random.choice(diagnosis_templates)
-
-    pain_type_str = pain_type.replace('_', ' ')
+    # diagnosis_template = random.choice(diagnosis_templates)
     
+    # pain_type_str = pain_type.replace('_', ' ')
+    pain_type_str = random.choice(pain_type_desc[pain_type])
+        
     # return (        
     #     f"{pain_template.format(pain_type=pain_type_str)}. "
     #     f"{severity_template.format(phrase=severity_phrase)}. {diagnosis_template.format(severity=severity)}."
@@ -99,5 +105,5 @@ splits = DatasetDict({
     'test': test_eval['test'],
 })
 
-splits.save_to_disk("local/data/augmented_no_diagnosis")
+splits.save_to_disk("local/data/augmented_extend_pain_type_desc")
 

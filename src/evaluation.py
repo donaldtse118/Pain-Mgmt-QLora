@@ -123,7 +123,7 @@ def parse_llm_output(llm_output) -> dict:
 
 def get_score(reference, prediction):
     
-    # 100 full mark, bool 45, dosage 45, rationale: 20
+    # 100 full mark, bool 45, dosage 45, rationale: 10
     score = 0
     if "answer" in prediction.keys():
         if reference["answer_bool"].lower() == prediction["answer"].lower():
@@ -150,13 +150,10 @@ def get_score(reference, prediction):
 
 
 def main():
-
-    # dataset = load_from_disk("local/data/augmented")["test"]
-    # dataset = load_from_disk("local/data/processed")["train"].select(range(20))
-    
-    test_datasets = {
-        "augmented" : load_from_disk("local/data/augmented")["test"],
-        "medicial": load_from_disk("local/data/processed")["train"].select(range(20)),
+        
+    test_datasets = {        
+        "augmented" : load_from_disk("local/data/augmented_extend_pain_type_desc")["test"].select(range(20)),        
+        "medicial": load_from_disk("local/data/processed")["test"].select(range(20)),
     }
 
     models = {
@@ -186,10 +183,11 @@ def main():
         for dataset_name, dataset in test_datasets.items():
 
             print(f"loaded {dataset_name} data ({len(dataset)}) records")
-            print(f"Evaluating model [{model_name_path}] ...")
+            print(f"Evaluating {model_type} model [{model_name_path}] ...")
             average_score, details = evaluate("Base Model", tokenizer, model, dataset)
 
-            formatted_model_name = re.sub(r'[^a-zA-Z0-9]', '_', model_name_path.split("/")[-1])
+            # formatted_model_name = re.sub(r'[^a-zA-Z0-9]', '_', model_name_path.split("/")[-1])
+            formatted_model_name = model_type
             
             ts = datetime.now().strftime("%Y%m%d_%H%M")
             details.to_csv(f"eval_{dataset_name}_by_{formatted_model_name}_score_{average_score:.2f}_ts_{ts}.csv")
