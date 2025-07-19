@@ -1,12 +1,19 @@
-# %%
+# inbuilt
+import re
+
+# 3rd parties
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-from datasets import load_from_disk
+from datasets import load_from_disk, Dataset
 import torch
-import re
-from data import prompt
 
-from config import PRETRAIN_MODEL_NAME
+# local import
+from data import prompt
+from config.config import PRETRAIN_MODEL_NAME
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 # dataset = load_from_disk("local/data/processed")
 # dataset = load_from_disk("local/data/augmented")
@@ -15,42 +22,46 @@ from config import PRETRAIN_MODEL_NAME
 dataset = load_from_disk("local/data/hybrid_extend_pain_type_desc")
 
 # Load tokenizer
-tokenizer = AutoTokenizer.from_pretrained(PRETRAIN_MODEL_NAME)
-tokenizer.pad_token = tokenizer.eos_token
+def load_base_model_with_quantisation():
 
-# Load quantized model with 4-bit
-model = AutoModelForCausalLM.from_pretrained(
-    PRETRAIN_MODEL_NAME,    
-    device_map={"": 0},   # force model to GPU device 0
-    quantization_config={
-        "load_in_4bit": True,
-        "bnb_4bit_compute_dtype": torch.bfloat16,
-        "bnb_4bit_use_double_quant": True,
-        "bnb_4bit_quant_type": "nf4",
-    },
-)
+    tokenizer = AutoTokenizer.from_pretrained(PRETRAIN_MODEL_NAME)
+    tokenizer.pad_token = tokenizer.eos_token
 
-# %%
-# Prepare model for QLoRA
-model = prepare_model_for_kbit_training(model)
+    # Load quantized model with 4-bit
+    model = AutoModelForCausalLM.from_pretrained(
+        PRETRAIN_MODEL_NAME,    
+        device_map={"": 0},   # force model to GPU device 0
+        quantization_config={
+            "load_in_4bit": True,
+            "bnb_4bit_compute_dtype": torch.bfloat16,
+            "bnb_4bit_use_double_quant": True,
+            "bnb_4bit_quant_type": "nf4",
+        },
+    )
+    return model, tokenizer
 
-# %%
-# Configure LoRA
-lora_config = LoraConfig(
-    r=4,                # Lower rank to reduce #params and overfitting
-    lora_alpha=16,      # Lower alpha to soften updates
-    # r=8,                # Lower rank to reduce #params and overfitting    
-    # lora_alpha=32,      # Lower alpha to soften updates
-    target_modules=["q_proj", "v_proj"],  
-    lora_dropout=0.1,   # Slightly higher dropout to prevent overfit
-    bias="none",
-    task_type="CAUSAL_LM"
-)
 
-# Apply LoRA
-model = get_peft_model(model, lora_config)
+def apply_lora_setting(model):
+    model = prepare_model_for_kbit_training(model)
 
-def tokenize(sample):
+    # Configure LoRA
+    lora_config = LoraConfig(
+        r=4,                # Lower rank to reduce #params and overfitting
+        lora_alpha=16,      # Lower alpha to soften updates
+        # r=8,                # Lower rank to reduce #params and overfitting    
+        # lora_alpha=32,      # Lower alpha to soften updates
+        target_modules=["q_proj", "v_proj"],  
+        lora_dropout=0.1,   # Slightly higher dropout to prevent overfit
+        bias="none",
+        task_type="CAUSAL_LM"
+    )
+
+    # Apply LoRA
+    model = get_peft_model(model, lora_config)
+
+    return model
+
+def tokenize(sample, tokenizer):
     # 1. Generate the full prompt and the expected output
     input_text = prompt.generate_llm_input(sample["vignette"], sample["drug"])
     label_text = prompt.generate_llm_output(
@@ -59,10 +70,7 @@ def tokenize(sample):
         sample['explanation']
     )
 
-    # 2. Concatenate input_text and label_text to form the complete sequence for the model
-    #    Add an EOS token at the end of the entire sequence if your model expects it
-    #    or if you want the generation to naturally stop.
-    #    However, for training, just concatenating is often sufficient as the max_length will truncate.
+    # 2. Concatenate input_text and label_text to form the complete sequence for the model    
     full_sequence_text = input_text + label_text + tokenizer.eos_token
 
     # 3. Tokenize the full sequence
@@ -90,7 +98,7 @@ def tokenize(sample):
     input_len = len(tokenized_input_part.input_ids)
     
     # Copy input_ids to create labels
-    labels = input_ids.clone() # Use .clone() for tensors
+    labels = input_ids.clone() 
 
     # Mask out the input_text portion from the labels
     # PyTorch's CrossEntropyLoss with `ignore_index=-100` will ignore these tokens.
@@ -98,9 +106,7 @@ def tokenize(sample):
     # The -100 masking means the model will not try to predict these tokens.
     labels[:input_len] = -100
 
-    # Replace padding tokens in labels with -100.
-    # This is already handled by the `labels[:input_len] = -100` if padding is before the output.
-    # If padding is at the end, and part of the output is padded, this line is correct.
+    # Replace padding tokens in labels with -100.    
     labels[labels == tokenizer.pad_token_id] = -100
 
     return {
@@ -109,46 +115,56 @@ def tokenize(sample):
         "labels": labels,
     }
 
+def fune_tune_model(dataset:Dataset):
 
-tokenized_train_dataset = dataset['train'].map(tokenize, batched=False)
+    model, tokenizer = load_base_model_with_quantisation()
+    lora_model = apply_lora_setting(model)
 
-# Training config
-training_args = TrainingArguments(
-    logging_steps=10,
-    per_device_train_batch_size=4,
-    gradient_accumulation_steps=4,
-    warmup_steps=10,
-    # max_steps=100,
-    max_steps=60,
-    learning_rate=2e-4,
-    fp16=True,
-    logging_dir="./logs",
-    output_dir="./qlora-output",
-    save_total_limit=1,
-    save_strategy="no",  # For demo
-    report_to="none"
-)
+    # tokenized_train_dataset = dataset['train'].map(tokenize, batched=False)
+    tokenized_train_dataset = dataset.map(
+        tokenize,
+        batched=False,
+        fn_kwargs={"tokenizer": tokenizer}
+    )
 
-# Train
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=tokenized_train_dataset,
-    tokenizer=tokenizer,
-)
+    # Training config
+    training_args = TrainingArguments(
+        logging_steps=10,
+        per_device_train_batch_size=4,
+        gradient_accumulation_steps=4,
+        warmup_steps=10,
+        max_steps=60,
+        learning_rate=2e-4,
+        fp16=True,
+        logging_dir="./logs",
+        output_dir="./qlora-output",
+        save_total_limit=1,
+        save_strategy="no",  # For demo
+        report_to="none"
+    )
 
-output = trainer.train()
+    # Train
+    trainer = Trainer(
+        model=lora_model,
+        args=training_args,
+        train_dataset=tokenized_train_dataset,
+        tokenizer=tokenizer,
+    )
+
+    output = trainer.train()
+    
+    logger.info(f'Training completed. training loss = {output.training_loss}')
+    logger.info(output.metrics)
 
 
-formatted_model_name = re.sub(r'[^a-zA-Z0-9]', '_', PRETRAIN_MODEL_NAME)
+    formatted_model_name = re.sub(r'[^a-zA-Z0-9]', '_', PRETRAIN_MODEL_NAME)
 
-# Save the LoRA-adapted model and tokenizer
-output_model_path = f"local/model/qlora_ft_{formatted_model_name}"
-model.save_pretrained(output_model_path)
-tokenizer.save_pretrained(output_model_path)
+    # Save the LoRA-adapted model and tokenizer
+    output_model_path = f"local/model/qlora_ft_{formatted_model_name}"
+    lora_model.save_pretrained(output_model_path)
+    tokenizer.save_pretrained(output_model_path)
 
-print(output.training_loss)
-print(output.metrics)
+    return lora_model, tokenizer, output_model_path
 
 
 # tokenise input and output together and mask output input

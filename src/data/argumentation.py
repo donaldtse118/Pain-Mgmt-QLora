@@ -1,19 +1,23 @@
+# inbuilt
 import random
+
+# 3rd parties
+from datasets import DatasetDict, Dataset
 import pandas as pd
 
-from terms import (pain_types, dosages, explanation_templates, severity_phrases, 
-                   severity_templates, pain_templates, 
-                #    diagnosis_templates, 
-                    pain_types_drug_map, 
-                    pain_type_desc,
-                    severity_phrases,
-                    severities)
-
+# local import 
+from data.terms import (pain_types, dosages, explanation_templates, severity_phrases,
+                   severity_templates, pain_templates,
+                   #    diagnosis_templates,
+                   pain_types_drug_map,
+                   pain_type_desc,
+                   severity_phrases,
+                   severities)
 
 
 # Generate a synthetic vignette using severity level
 def generate_vignette(pain_type, severity):
-    
+
     if severity == "none":
         severity_phrase = random.choice(severity_phrases["mild"])
     else:
@@ -22,16 +26,16 @@ def generate_vignette(pain_type, severity):
     pain_template = random.choice(pain_templates)
     severity_template = random.choice(severity_templates)
     # diagnosis_template = random.choice(diagnosis_templates)
-    
+
     # pain_type_str = pain_type.replace('_', ' ')
     pain_type_str = random.choice(pain_type_desc[pain_type])
-        
-    # return (        
+
+    # return (
     #     f"{pain_template.format(pain_type=pain_type_str)}. "
     #     f"{severity_template.format(phrase=severity_phrase)}. {diagnosis_template.format(severity=severity)}."
     # )
 
-    return (        
+    return (
         f"{pain_template.format(pain_type=pain_type_str)}. "
         f"{severity_template.format(phrase=severity_phrase)}."
     )
@@ -41,10 +45,10 @@ def generate_augmented_data_with_vignettes(n=50, seed=42):
     random.seed(seed)
     data = []
 
-    for _ in range(n):        
+    for _ in range(n):
         pain_type = random.choice(pain_types)
-        
-        drug = pain_types_drug_map[pain_type]        
+
+        drug = pain_types_drug_map[pain_type]
 
         patient_severity = random.choice(severities)
         dosage = dosages[drug].get(patient_severity, "Omitted")
@@ -55,14 +59,16 @@ def generate_augmented_data_with_vignettes(n=50, seed=42):
             explanation = explanation_templates[answer].format(drug=drug)
         else:
             if dosage.startswith("Low"):
-                explanation = explanation_templates["Yes_Low"].format(drug=drug)
+                explanation = explanation_templates["Yes_Low"].format(
+                    drug=drug)
             else:
-                explanation = explanation_templates["Yes_High"].format(drug=drug)
+                explanation = explanation_templates["Yes_High"].format(
+                    drug=drug)
 
         vignette = generate_vignette(pain_type, patient_severity)
 
         data.append({
-            "vignette": vignette,            
+            "vignette": vignette,
             "pain_type": pain_type,
             "pain_severity": patient_severity,
             "drug": drug,
@@ -74,36 +80,36 @@ def generate_augmented_data_with_vignettes(n=50, seed=42):
     return pd.DataFrame(data)
 
 
-# Create a small batch for review
-augmented_df = generate_augmented_data_with_vignettes(n=30000)
+def get_augmented_dataset(persist_path: str = None):
+    # Create a small batch for review
+    augmented_df = generate_augmented_data_with_vignettes(n=30000)
 
-augmented_df.drop_duplicates(inplace=True)
-print(augmented_df.shape)
+    augmented_df.drop_duplicates(inplace=True)    
 
+    augmented_df = augmented_df.head(1000)
 
-# augmented_df.to_csv("aug.csv", index=False)
-# augmented_df.head(10)
+    # Prepare dataset
+    dataset = Dataset.from_pandas(augmented_df)
 
-augmented_df = augmented_df.head(1000)
+    # First split: train + temp (test+eval)
+    train_test = dataset.train_test_split(
+        test_size=0.1, seed=42)
 
-# Prepare dataset
-from datasets import Dataset
-dataset = Dataset.from_pandas(augmented_df)
+    # Second split: test + eval from temp
+    test_eval = train_test['test'].train_test_split(
+        test_size=0.2, seed=42)
 
-# First split: train + temp (test+eval)
-train_test = dataset.train_test_split(test_size=0.1, seed=42)  # 70% train, 30% temp
+    # Combine all splits into a DatasetDict
 
-# Second split: test + eval from temp
-test_eval = train_test['test'].train_test_split(test_size=0.2, seed=42)  # 15% test, 15% eval
+    splits = DatasetDict({
+        'train': train_test['train'],
+        'validation': test_eval['train'],
+        'test': test_eval['test'],
+    })
 
-# Combine all splits into a DatasetDict
-from datasets import DatasetDict
+    # splits.save_to_disk("local/data/augmented_extend_pain_type_desc")
 
-splits = DatasetDict({
-    'train': train_test['train'],
-    'validation': test_eval['train'],
-    'test': test_eval['test'],
-})
+    if persist_path:
+        splits.save_to_disk(persist_path)
 
-splits.save_to_disk("local/data/augmented_extend_pain_type_desc")
-
+    return splits

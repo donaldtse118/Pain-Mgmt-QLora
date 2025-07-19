@@ -1,3 +1,4 @@
+# in-built
 import json
 
 role_and_format = """
@@ -13,15 +14,17 @@ dosage_query = """
 Would you offer {drug} to Patient A?
 """
 
-def generate_llm_input(vignette:str, drug: str):
-    return role_and_format + vignette+ " " + dosage_query.format(drug=drug)
+
+def generate_llm_input(vignette: str, drug: str):
+    return role_and_format + vignette + " " + dosage_query.format(drug=drug)
+
 
 def generate_llm_output(answer_bool, dosage, rationale):
-    
+
     result = {
-      "answer": answer_bool,
-      "dosage": dosage, 
-      "rationale": rationale,
+        "answer": answer_bool,
+        "dosage": dosage,
+        "rationale": rationale,
     }
 
-    return json.dumps(result) # repr function adding /n in string
+    return json.dumps(result)  # repr function adding /n in string

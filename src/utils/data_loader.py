@@ -1,6 +1,10 @@
+# inbuilt
 import os
+
+# 3rd parties
 import pandas as pd
 
+# assume medicial data already downloaded at "{YOUR_PROJECT_ROOT}\local\data\raw\physionet.org"
 current_script_dir = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(current_script_dir, '..', '..'))
 RAW_DATA_PATH = os.path.join(PROJECT_ROOT,"local", "data","raw","physionet.org","files","q-pain","1.0.0")
