@@ -195,9 +195,9 @@ def fune_tune_model(dataset:Dataset):
 # {'train_runtime': 422.6856, 'train_samples_per_second': 0.757, 'train_steps_per_second': 0.047, 'total_flos': 6497344652574720.0, 'train_loss': 0.7833358764648437, 'epoch': 0.35555555555555557}
 # model_type  test_dataset  score
 # baseline    augmented     0.600
-# baseline    medicial      0.775
+# baseline    medical      0.775
 # finetune    augmented     0.700
-# finetune     medicial     0.225
+# finetune     medical     0.225
 
 # train with hybrid dataset
 # {'train_runtime': 396.5019, 'train_samples_per_second': 0.807, 'train_steps_per_second': 0.05, 'total_flos': 6131869015867392.0, 'train_loss': 1.0309191703796388, 'epoch': 3.3478260869565215}
@@ -205,23 +205,23 @@ def fune_tune_model(dataset:Dataset):
 # train with hybrid dataset(150 rcd), extended pain type and severity description, max_step=20
 #   model_type test_dataset  score
 # 0   baseline    augmented  0.500
-# 1   baseline     medicial  0.775
+# 1   baseline     medical  0.775
 # 2   finetune    augmented  0.620
-# 3   finetune     medicial  0.600
+# 3   finetune     medical  0.600
 # {'train_runtime': 393.3631, 'train_samples_per_second': 0.813, 'train_steps_per_second': 0.051, 'total_flos': 6091260611788800.0, 'train_loss': 0.96949462890625, 'epoch': 2.0}
 
 # train with hybrid dataset(150 rcd), extended pain type and severity description, max_step=40
 #   model_type test_dataset  score
 # 0   baseline    augmented  0.500
-# 1   baseline     medicial  0.775
+# 1   baseline     medical  0.775
 # 2   finetune    augmented  0.925
-# 3   finetune     medicial  0.700
+# 3   finetune     medical  0.700
 # {'train_runtime': 787.7507, 'train_samples_per_second': 0.812, 'train_steps_per_second': 0.051, 'total_flos': 1.21825212235776e+16, 'train_loss': 0.6849146366119385, 'epoch': 4.0}
 
 # train with hybrid dataset(150 rcd), extended pain type and severity description, max_step=60
 #   model_type test_dataset  score
 # 0   baseline    augmented  0.500
-# 1   baseline     medicial  0.775
+# 1   baseline     medical  0.775
 # 2   finetune    augmented  0.925
-# 3   finetune     medicial  0.950
+# 3   finetune     medical  0.950
 # {'train_runtime': 1178.4118, 'train_samples_per_second': 0.815, 'train_steps_per_second': 0.051, 'total_flos': 1.82737818353664e+16, 'train_loss': 0.5354639172554017, 'epoch': 6.0}

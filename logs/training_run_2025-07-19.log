@@ -43,7 +43,7 @@ loaded augmented data (20) records
 Evaluating baseline model [lmsys/vicuna-7b-v1.5] ...
 Evaluating model...:   0%|                                                                                              | 0/20 [00:00<?, ?it/s]The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.   
 Accuracy: 50.00%
-loaded medicial data (20) records
+loaded medical data (20) records
 real time accuracy: 77.50%
 Evaluating model...: 100%|█████████████████████████████████████████████████████████████████████████████████████| 20/20 [06:35<00:00, 19.79s/it] 
 Accuracy: 77.50%
@@ -54,14 +54,14 @@ The following generation flags are not valid and may be ignored: ['temperature',
 loaded augmented data (20) records
 Evaluating finetune model [local/model/qlora_ft_lmsys_vicuna_7b_v1_5] ...
 Accuracy: 97.50%
-loaded medicial data (20) records
+loaded medical data (20) records
 Evaluating finetune model [local/model/qlora_ft_lmsys_vicuna_7b_v1_5] ...
 real time accuracy: 95.00%
 Evaluating model...: 100%|█████████████████████████████████████████████████████████████████████████████████████| 20/20 [13:45<00:00, 41.26s/it] 
 Accuracy: 95.00%
   model_type test_dataset  score
 0   baseline    augmented  0.500
-1   baseline     medicial  0.775
+1   baseline     medical  0.775
 2   finetune    augmented  0.975
-3   finetune     medicial  0.950
+3   finetune     medical  0.950
 14:50:44 - __main__ - INFO - Finished Evaluation

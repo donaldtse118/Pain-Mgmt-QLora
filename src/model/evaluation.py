@@ -146,7 +146,7 @@ def evaluate(models:dict,
 
     # test_datasets = {
     #     "augmented": load_from_disk("local/data/augmented_extend_pain_type_desc")["test"].select(range(20)),
-    #     "medicial": load_from_disk("local/data/processed")["test"].select(range(20)),
+    #     "medical": load_from_disk("local/data/processed")["test"].select(range(20)),
     # }
 
     # models = {

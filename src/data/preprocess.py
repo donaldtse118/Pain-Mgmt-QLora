@@ -1,4 +1,4 @@
-# Proprocess medicial data
+# Proprocess medical data
 # generate train and test dataset
 
 

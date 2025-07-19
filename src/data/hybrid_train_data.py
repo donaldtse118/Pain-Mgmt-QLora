@@ -1,4 +1,4 @@
-# Hybrid train data is to solve original medicial dataset imbalance class problem
+# Hybrid train data is to solve original medical dataset imbalance class problem
 
 # 3rd parties
 from datasets import DatasetDict, Dataset
@@ -19,7 +19,7 @@ def get_hybrid_train_data(df_orig: pd.DataFrame,
                           persist_path: str = None
                           ):
     """
-    Base on original medicial dataset, in each iteration supplement the least occur pain_type and dosage sample from augmented data
+    Base on original medical dataset, in each iteration supplement the least occur pain_type and dosage sample from augmented data
     (performance fine for small dataset)
     """
 

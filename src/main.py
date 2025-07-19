@@ -34,7 +34,7 @@ logger.info(f"Finished to fine tune model")
 logger.info(f"Start evaluation...")
 test_datasets = {
     "augmented": dataset_augmented["test"].select(range(20)),
-    "medicial": dataset_medical["test"].select(range(20)),
+    "medical": dataset_medical["test"].select(range(20)),
 }
 
 models = {
