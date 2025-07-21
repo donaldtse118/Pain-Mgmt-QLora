@@ -67,7 +67,7 @@ How to reliably generate yes/no opioid dosage decisions from synthetic clinical 
 
 ## 📚 Domain Knowledge
 
-For detailed clinical context, opioid pharmacology, and pain management concepts referenced in this project, see [domain_knowledge.md](./domain_knowledge.md). This includes opioid types, dosing rules, and pain severity categorizations.
+For detailed clinical context, opioid pharmacology, and pain management concepts referenced in this project, see [domain_knowledge.md](./doc/domain_knowledge.md). This includes opioid types, dosing rules, and pain severity categorizations.
 
 ---
 
